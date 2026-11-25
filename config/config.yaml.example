@@ -1,0 +1,54 @@
+# Hysteria 2 服务端配置模板
+#
+# 不要直接改这个文件，也不要直接拷到 /etc/hysteria/config.yaml。
+# 真实配置由 scripts/render_config.py 从环境变量渲染生成，
+# 占位符统一是双下划线包裹的 REPLACE_WITH 形式（见下方各段），
+# 漏填时渲染脚本会报错退出，不会写出半成品配置。
+#
+# 渲染方式见 scripts/deploy.sh，或手工：
+#   LISTEN_PORT=8443 AUTH_PASSWORD=... OBFS_PASSWORD=... \
+#   TLS_CERT=... TLS_KEY=... python3 scripts/render_config.py \
+#     config/config.yaml.example /etc/hysteria/config.yaml
+
+# 监听端口。Hysteria 走 UDP，与 TCP 的 443 互不冲突，
+# 但同机若已有别的 UDP 服务占着 443，就要错开。
+listen: :__REPLACE_WITH_PORT__
+
+tls:
+  cert: __REPLACE_WITH_CERT_PATH__
+  key: __REPLACE_WITH_KEY_PATH__
+
+auth:
+  type: password
+  password: __REPLACE_WITH_AUTH_PASSWORD__
+
+# salamander 是对称 XOR 混淆，服务端与客户端口令必须一致。
+# 它把每个 QUIC 包整体打散，使 DPI 读不到 QUIC ClientHello，
+# 也就无从做 QUIC 指纹识别。代价是两端都要填，没有它就连不上。
+obfs:
+  type: salamander
+  salamander:
+    password: __REPLACE_WITH_OBFS_PASSWORD__
+
+quic:
+  initStreamReceiveWindow: 8388608
+  maxStreamReceiveWindow: 8388608
+  initConnReceiveWindow: 20971520
+  maxConnReceiveWindow: 20971520
+
+# false = 采纳客户端声明的带宽，走 Brutal 拥塞控制。
+# 小内存 VPS 上这是一个风险点：客户端把 up/down 写大就会把 CPU 打满。
+# 若要强制两端都走 BBR，改成 true，并在客户端留空 up_mbps/down_mbps。
+ignoreClientBandwidth: false
+
+sniff:
+  enabled: true
+  sni: false
+
+# 非 Hysteria 流量（扫描器、误连的浏览器）落到这里，
+# 看到的是一个正常的 bing 反代，而不是一个空白端口。
+masquerade:
+  type: proxy
+  proxy:
+    url: __REPLACE_WITH_MASQUERADE_URL__
+    rewriteHost: true

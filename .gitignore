@@ -1,0 +1,20 @@
+# 真实配置与证书：任何情况下都不入库
+config/config.yaml
+*.key
+*.pem
+*.crt
+*.p12
+*private*
+
+# 配置备份
+*.bak
+*.bak-*
+
+# 自检临时文件
+.hysteria_selftest*.yaml
+.hysteria_selftest*.json
+
+# 运行时
+*.log
+__pycache__/
+*.pyc
